@@ -8,11 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.example.movie_catalog_service.moviecatalogservice.models.Catalog_item;
-import com.example.movie_catalog_service.moviecatalogservice.models.Movie;
-import com.example.movie_catalog_service.moviecatalogservice.models.UserRating;
+import com.example.movie_catalog_service.moviecatalogservice.services.MoviesInfo;
+import com.example.movie_catalog_service.moviecatalogservice.services.UserRatingInfo;
 
 @RestController
 @RequestMapping("/catalog")
@@ -25,24 +24,25 @@ public class Catalog_Movie_Resource {
      so i have to create a getter method that sends a list of all the movies based on user id  
      * 
      */
+
      @Autowired
-     private RestTemplate rest;
+     private MoviesInfo moviesinfo;
+
+     @Autowired
+     private UserRatingInfo userRatingInfo;
 
      @GetMapping("/{userid}")
      public List<Catalog_item> getmovies(@PathVariable String userid){
        try {
-        System.out.println("in catalog get mthod");
-        UserRating user_rating=rest.getForObject("http://Ratings-Data-Service/rating/user/"+userid,  UserRating.class);
-        System.out.println("after getForObject ratings data -catalog get mthod");
-        return user_rating.getRatings().stream()
+        System.out.println("getting in the getmovies() ");
+        userRatingInfo.getUserRatingItem(userid).getRatings().stream()
                 .map(rating -> {
-                    Movie movie = rest.getForObject("http://MOVIES-INFO-SERVICE/movie/"+rating.getMovieid(), Movie.class);
-                    System.out.println("after getForObject ratings data -catalog get mthod");
-                    return new Catalog_item(movie.getName(), movie.getDescription(), rating.getRating());
+                    return moviesinfo.getCatalogItem(rating);
                 })
                 .collect(Collectors.toList());
+                System.out.println("getting out the getmovies() "+userRatingInfo);
        }
-       catch(Exception e) {
+        catch(Exception e) {
         System.out.println("------------------------------------------------------");
         System.out.println();
         e.printStackTrace();
@@ -51,4 +51,9 @@ public class Catalog_Movie_Resource {
        }
        return null;
      }
+
+
 }
+/*
+ * providing the methods that call other apis in a different class for the hystrix to work its proxy class implementation
+ */
